@@ -40,15 +40,23 @@ void MelodyPlayer::play() {
                      + " duration:" + computedNote.duration);
     if (melodyState->isSilence()) {
 #ifdef ESP32
-      ledcWriteTone(pwmChannel, 0);
+      #if ESP_IDF_VERSION_MAJOR > 4
+        ledcWriteTone(pin, 0);
+      #else
+        ledcWriteTone(pwmChannel, 0);
+      #endif
 #else
       noTone(pin);
 #endif
       delay(0.3f * computedNote.duration);
     } else {
 #ifdef ESP32
+    #if ESP_IDF_VERSION_MAJOR > 4
+      ledcWriteTone(pin, computedNote.frequency);
+    #else
       ledcWriteTone(pwmChannel, computedNote.frequency);
-#else
+    #endif
+  #else
       tone(pin, computedNote.frequency);
 #endif
       delay(computedNote.duration);
@@ -89,7 +97,11 @@ void changeTone(MelodyPlayer* player) {
       if(!player->muted)
       {
 #ifdef ESP32
-        ledcWriteTone(player->pwmChannel, 0);
+    #if ESP_IDF_VERSION_MAJOR > 4
+      ledcWriteTone(player->pin, computedNote.frequency);
+    #else
+      ledcWriteTone(player->pwmChannel, computedNote.frequency);
+    #endif
 #else
         tone(player->pin, 0);
 #endif
@@ -104,8 +116,14 @@ void changeTone(MelodyPlayer* player) {
       if(!player->muted)
       {
 #ifdef ESP32
-        ledcWriteTone(player->pwmChannel, computedNote.frequency);
-        ledcWrite(player->pwmChannel,player->volume);
+  #if ESP_IDF_VERSION_MAJOR > 4
+      ledcWriteTone(player->pin, computedNote.frequency);
+      ledcWrite(player->pin,player->volume);
+    #else
+      ledcWriteTone(player->pwmChannel, computedNote.frequency);
+      ledcWrite(player->pwmChannel,player->volume);
+    #endif
+        
 #else
         tone(player->pin, computedNote.frequency);
 #endif
@@ -229,12 +247,14 @@ void MelodyPlayer::turnOn() {
   // 2000 is a frequency, it will be changed at the first play
   #if ESP_IDF_VERSION_MAJOR > 4
     ledcAttach(pin, 2000, resolution);
+    ledcWrite(pin, volume);
   #else
     ledcSetup(pwmChannel, 2000, resolution);
     ledcAttachPin(pin, pwmChannel);
+    ledcWrite(pwmChannel, volume);
   #endif
 
-  ledcWrite(pwmChannel, volume);
+  
 #endif
 }
 
@@ -243,17 +263,23 @@ void MelodyPlayer::setVolume(byte newVolume) {
 #ifdef ESP32
   if(state == State::PLAY)
   {
-    ledcWrite(pwmChannel, volume);
+    #if ESP_IDF_VERSION_MAJOR > 4
+      ledcWrite(pin, volume);
+    #else
+      ledcWrite(pwmChannel, volume);
+    #endif
   }
 #endif
 }
 
 void MelodyPlayer::turnOff() {
 #ifdef ESP32
-  ledcWrite(pwmChannel, 0);
+  
   #if ESP_IDF_VERSION_MAJOR > 4
+    ledcWrite(pin, 0);
     ledcDetach(pin);
   #else
+    ledcWrite(pwmChannel, 0);
     ledcDetachPin(pin);
   #endif
 
