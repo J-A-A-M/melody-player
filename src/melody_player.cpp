@@ -227,8 +227,13 @@ void MelodyPlayer::turnOn() {
 #ifdef ESP32
   const int resolution = 8;
   // 2000 is a frequency, it will be changed at the first play
-  ledcSetup(pwmChannel, 2000, resolution);
-  ledcAttachPin(pin, pwmChannel);
+  #if ESP_IDF_VERSION_MAJOR > 4
+    ledcAttach(pin, 2000, resolution);
+  #else
+    ledcSetup(pwmChannel, 2000, resolution);
+    ledcAttachPin(pin, pwmChannel);
+  #endif
+
   ledcWrite(pwmChannel, volume);
 #endif
 }
@@ -246,7 +251,12 @@ void MelodyPlayer::setVolume(byte newVolume) {
 void MelodyPlayer::turnOff() {
 #ifdef ESP32
   ledcWrite(pwmChannel, 0);
-  ledcDetachPin(pin);
+  #if ESP_IDF_VERSION_MAJOR > 4
+    ledcDetach(pin);
+  #else
+    ledcDetachPin(pin);
+  #endif
+
 #else
   // Remember that this will set LOW output, it doesn't mean that buzzer is off (look at offLevel
   // for more info).
@@ -263,7 +273,13 @@ void MelodyPlayer::mute() {
 
 void MelodyPlayer::unmute() {
 #ifdef ESP32
-  ledcAttachPin(pin, pwmChannel);
+   const int resolution = 8;
+  // 2000 is a frequency, it will be changed at the first play
+  #if ESP_IDF_VERSION_MAJOR > 4
+    ledcAttach(pin, 2000, resolution);
+  #else
+    ledcAttachPin(pin, pwmChannel);
+  #endif
 #endif
   muted = false;
 }
