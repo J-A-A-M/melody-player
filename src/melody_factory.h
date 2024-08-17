@@ -22,28 +22,8 @@
 
 #include "melody.h"
 
-#include <FS.h>
-#ifdef ESP32
-#include <SPIFFS.h>
-#endif
-
 class MelodyFactoryClass {
 public:
-  /**
-   * Load the melody from file in MelodyPlayer format.
-   */
-  Melody load(String filePath, FS& fs = SPIFFS);
-
-  /**
-   * Load melody from file in RTTTL format. The file must contain only one melody.
-   */
-  Melody loadRtttlFile(String filePath, FS& fs = SPIFFS);
-
-  /**
-   * Load melody with the given title from a file containing multiple RTTTL melody (one Melody per
-   * line).
-   */
-  Melody loadRtttlDB(String filepath, String title, FS& fs = SPIFFS);
 
   /**
    * Load melody from string in RTTTL format.

@@ -26,57 +26,6 @@ static void removeCarriageReturn(String& s) {
   if (s.charAt(s.length() - 1) == '\r') { s = s.substring(0, s.length() - 1); }
 }
 
-Melody MelodyFactoryClass::load(String filepath, FS& fs) {
-  File f = fs.open(filepath, "r");
-  f.setTimeout(0);
-
-  if (!f) {
-    if (debug) Serial.println("Opening file error");
-    return Melody();
-  }
-
-  // Skip multi-line comments at the begin of the file
-  String line = f.readStringUntil('\n');
-  while (line.charAt(0) == '#') { line = f.readStringUntil('\n'); }
-
-  bool success = false;
-  success = loadTitle(line);
-  if (!success) { return Melody(); }
-
-  success = loadTimeUnit(f.readStringUntil('\n'));
-  if (!success) { return Melody(); }
-
-  success = loadNumberOfNotes(f.readStringUntil('\n'));
-  if (!success) { return Melody(); }
-
-  NoteFormat noteFormat = loadNoteFormat(f.readStringUntil('\n'));
-  if (noteFormat == NoteFormat::ERROR) {
-    return Melody();
-  } else {
-    this->noteFormat = noteFormat;
-  }
-
-  if (debug)
-    Serial.println(String("This melody object will take at least: ") + (sizeof(NoteDuration) * nNotes) + "bytes");
-  if (nNotes < maxLength) {
-    notes = std::make_shared<std::vector<NoteDuration>>();
-    notes->reserve(nNotes);
-    bool error = false;
-    while (f.available() && notes->size() < nNotes && !error) {
-      // get a token
-      String noteDuration = f.readStringUntil('|');
-      error = !loadNote(noteDuration);
-    }
-
-    if (error) {
-      if (debug) Serial.println("error during the tokens loading!");
-      return Melody();
-    }
-  }
-
-  return Melody(title, timeUnit, notes, true);
-}
-
 Melody MelodyFactoryClass::load(String title, unsigned short timeUnit, String notesToLoad[],
                                 unsigned short nNotesToLoad, bool autoSilence) {
   if (title.length() == 0 && timeUnit <= 20) { return Melody(); }
